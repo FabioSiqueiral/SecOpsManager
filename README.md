@@ -51,7 +51,8 @@ A aplicação pode ser hospedada em Ubuntu Server usando Docker Compose; não é
    ```bash
    cp .env.example .env
    chmod 600 .env
-   sed -i "s/^SQL_PASSWORD=.*/SQL_PASSWORD=$(openssl rand -hex 32)/" .env
+   SQL_PASSWORD="Aa$(openssl rand -hex 32)9"
+   sed -i "s/^SQL_PASSWORD=.*/SQL_PASSWORD=${SQL_PASSWORD}/" .env
    ```
 
 3. Edite `.env` e substitua os endereços de exemplo pelo domínio HTTPS da implantação. Use o mesmo origin (esquema e domínio, sem caminho) nas duas variáveis:
