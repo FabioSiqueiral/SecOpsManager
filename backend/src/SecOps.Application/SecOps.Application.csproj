@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><ProjectReference Include="../SecOps.Domain/SecOps.Domain.csproj"/></ItemGroup></Project>

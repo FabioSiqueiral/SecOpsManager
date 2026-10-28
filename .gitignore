@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.next/
+**/*.tsbuildinfo
+**/TestResults/
+.env
+**/.env.local
+.tools/
+storage/
+**/appsettings.Local.json
+**/test-results/
+**/playwright-report/

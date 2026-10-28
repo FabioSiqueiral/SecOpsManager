@@ -1,0 +1,74 @@
+name: secops-manager
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_PID: ${MSSQL_PID:-Developer}
+      MSSQL_SA_PASSWORD: ${SQL_PASSWORD:?Defina SQL_PASSWORD no .env}
+    ports:
+      - "127.0.0.1:14339:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+  migrate:
+    build: ./backend
+    command: ["--migrate"]
+    environment:
+      ConnectionStrings__SqlServer: "Server=sql;Database=SecOpsManager;User Id=sa;Password=${SQL_PASSWORD};Encrypt=True;TrustServerCertificate=True"
+    depends_on:
+      sql:
+        condition: service_healthy
+    restart: "no"
+  api:
+    build: ./backend
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__SqlServer: "Server=sql;Database=SecOpsManager;User Id=sa;Password=${SQL_PASSWORD};Encrypt=True;TrustServerCertificate=True"
+      Entra__TenantId: ${ENTRA_TENANT_ID:-00000000-0000-0000-0000-000000000000}
+      Entra__ApiClientId: ${ENTRA_API_CLIENT_ID:-00000000-0000-0000-0000-000000000000}
+      FrontendUrl: ${FRONTEND_URL:-http://localhost:3300}
+      StoragePath: /app/storage
+      AI__Enabled: ${AI_ENABLED:-false}
+      AI__Endpoint: ${AI_ENDPOINT:-https://api.openai.com/v1/chat/completions}
+      AI__Model: ${AI_MODEL:-}
+      AI__ApiKey: ${AI_KEY:-}
+      AI__AuthMode: ${AI_AUTH_MODE:-Bearer}
+      Email__Enabled: ${EMAIL_ENABLED:-false}
+      Email__Host: ${EMAIL_HOST:-}
+      Email__Port: ${EMAIL_PORT:-587}
+      Email__From: ${EMAIL_FROM:-}
+      Email__Username: ${EMAIL_USERNAME:-}
+      Email__Password: ${EMAIL_PASSWORD:-}
+      Email__LogoUrl: ${EMAIL_LOGO_URL:-}
+    ports:
+      - "127.0.0.1:5300:8080"
+    volumes:
+      - attachments:/app/storage
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:5300}
+        NEXT_PUBLIC_ENTRA_CLIENT_ID: ${ENTRA_FRONTEND_CLIENT_ID:-}
+        NEXT_PUBLIC_ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
+        NEXT_PUBLIC_API_SCOPE: ${ENTRA_API_SCOPE:-}
+    ports:
+      - "127.0.0.1:3300:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+volumes:
+  sql-data:
+  attachments:
