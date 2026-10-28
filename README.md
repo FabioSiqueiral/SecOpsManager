@@ -76,6 +76,32 @@ A aplicação pode ser hospedada em Ubuntu Server usando Docker Compose; não é
 
 O Compose usa SQL Server Developer por padrão, apropriado somente para desenvolvimento e testes. Para uma implantação de produção, confirme o licenciamento e defina `MSSQL_PID` no `.env` para uma edição licenciada suportada, além de avaliar uma conta SQL de privilégio mínimo em vez da conta `sa` usada pela configuração simplificada do Compose.
 
+### Acessar pela rede local sem domínio
+
+Para uso na rede local, sem proxy reverso ou túnel SSH, configure no `.env` o endereço IP fixo do servidor. Por exemplo, para `192.168.0.173`:
+
+```dotenv
+HOST_BIND_ADDRESS=192.168.0.173
+FRONTEND_URL=http://192.168.0.173:3300
+PUBLIC_API_URL=http://192.168.0.173:5300
+```
+
+Garanta que esse IP esteja configurado na interface do servidor e, de preferência, reservado no DHCP. Recrie os serviços para aplicar as URLs e a publicação das portas:
+
+```bash
+sudo docker compose up -d --build
+sudo docker compose ps
+```
+
+Em outros dispositivos **da mesma rede**, abra `http://192.168.0.173:3300`. A API usa a porta `5300`; a porta SQL `14339` continua acessível apenas pelo próprio servidor. Se o UFW estiver ativo, libere as portas da aplicação somente para o CIDR da sua rede confiável, substituindo `192.168.0.0/24` pelo CIDR correto:
+
+```bash
+sudo ufw allow from 192.168.0.0/24 to 192.168.0.173 port 3300 proto tcp
+sudo ufw allow from 192.168.0.0/24 to 192.168.0.173 port 5300 proto tcp
+```
+
+Não publique essas portas no roteador nem as libere para a Internet. Esse acesso usa HTTP sem TLS e é apropriado somente em uma rede confiável. A interface em modo de demonstração permite visualizar dados fictícios; para autenticação Microsoft Entra e uso completo, use um domínio com HTTPS e configure-o também como URI de redirecionamento SPA no Entra.
+
 ## Conectar Microsoft Entra ID
 
 Use dois registros de aplicativo, restritos ao seu tenant:

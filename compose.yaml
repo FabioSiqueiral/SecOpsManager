@@ -49,7 +49,7 @@ services:
       Email__Password: ${EMAIL_PASSWORD:-}
       Email__LogoUrl: ${EMAIL_LOGO_URL:-}
     ports:
-      - "127.0.0.1:5300:8080"
+      - "${HOST_BIND_ADDRESS:-127.0.0.1}:5300:8080"
     volumes:
       - attachments:/app/storage
     depends_on:
@@ -65,7 +65,7 @@ services:
         NEXT_PUBLIC_ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
         NEXT_PUBLIC_API_SCOPE: ${ENTRA_API_SCOPE:-}
     ports:
-      - "127.0.0.1:3300:3000"
+      - "${HOST_BIND_ADDRESS:-127.0.0.1}:3300:3000"
     depends_on:
       - api
     restart: unless-stopped
